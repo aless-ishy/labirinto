@@ -8,31 +8,31 @@
 
 
 
-/*Estrutura de dados que representa cada posiÁ„o no labirinto 3D*/
+/*Estrutura de dados que representa cada posi√ß√£o no labirinto 3D*/
 struct position3d{
-    int i;  /*PosiÁ„o no labirinto*/
+    int i;  /*Posi√ß√£o no labirinto*/
     int j;
 
     int k;  /*Numero do Labirinto, k varia de 0 a 2*/
-    int w;  /*Labirinto est· invertido ou n„o. Com k, essa estrutra representa qualquer posiÁ„o nos 6 labirintos*/
+    int w;  /*Labirinto est√° invertido ou n√£o. Com k, essa estrutra representa qualquer posi√ß√£o nos 6 labirintos*/
 };
 
-/*Estrutura de dados utilizada na animaÁ„o*/
+/*Estrutura de dados utilizada na anima√ß√£o*/
 struct path{
-    float i;  /*PosiÁ„o no labirinto*/
+    float i;  /*Posi√ß√£o no labirinto*/
     float j;
 
-    int k;  /*Numero representando se o labirinto est· cruzando o labirinto inicial no eixo x, y ou z*/
-    int w;  /*Diz se o labirinto est· invertido ou n„o*/
+    int k;  /*Numero representando se o labirinto est√° cruzando o labirinto inicial no eixo x, y ou z*/
+    int w;  /*Diz se o labirinto est√° invertido ou n√£o*/
 };
 
-/*NÛ da Pilha*/
+/*N√≥ da Pilha*/
 struct node3d{
     struct position3d data;
     struct node3d *next;
 };
 
-/*Matriz com posiÁıes j· passadas durante a busca em profundiade*/
+/*Matriz com posi√ß√µes j√° passadas durante a busca em profundiade*/
 static bool** isLooping[3][2] ;
 
 /*Tamanho do caminho*/
@@ -41,7 +41,7 @@ int path_size = 0;
 /*Vetor de labirintos*/
 static char** labirintos[3][2];
 
-/*EspaÁamento entre as posiÁıes de um labirinto*/
+/*Espa√ßamento entre as posi√ß√µes de um labirinto*/
 static double spacing = 1.5;
 
 /*Espessura da parede*/
@@ -52,25 +52,25 @@ static float height = 5;
 
 float rotation = 0.0;
 
-/*Dimensıes do labirinto*/
+/*Dimens√µes do labirinto*/
 int rows0, columns0;
 
-/*Caminho do inÌcio atÈ o final do labirinto*/
+/*Caminho do in√≠cio at√© o final do labirinto*/
 struct position3d* path_position3d = NULL;
 
-/*PosiÁ„o da animaÁ„o, onde ela est· e onde ela est· indo*/
+/*Posi√ß√£o da anima√ß√£o, onde ela est√° e onde ela est√° indo*/
 struct path now = {1, 1, 1, 1}, going = {1,2,1,1};
 
-/*Velocidade em que o labirinto È percorrido*/
+/*Velocidade em que o labirinto √© percorrido*/
 float speed = 1;
 
-/*VariaÁ„o de tempo*/
+/*Varia√ß√£o de tempo*/
 float delta = 0;
 
 /*Tempo anterior*/
 float timeOld = 0;
 
-/*PosiÁ„o atual no vetor de posiÁıes do labirinto que representa o caminho atÈ o fim do labirinto*/
+/*Posi√ß√£o atual no vetor de posi√ß√µes do labirinto que representa o caminho at√© o fim do labirinto*/
 int index_path = 0;
 
 int view = 0;
@@ -84,6 +84,10 @@ float x=0.0f,z=10.0f;
 // angle for rotating triangle
 float angle = 0.0f;
 
+double maze_spacing = 2*height+d+spacing;
+
+bool end_run = FALSE;
+
 const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
 const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -94,23 +98,23 @@ const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
 const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
 const GLfloat high_shininess[] = { 100.0f };
 
-/*Inicializa a posiÁ„o inicial e final do labirinto garantindo que as posiÁıes n„o sejam paredes*/
+/*Inicializa a posi√ß√£o inicial e final do labirinto garantindo que as posi√ß√µes n√£o sejam paredes*/
 void initBeginEnd3D(struct position3d *pI, struct position3d *pF){
-    /*A posiÁ„o inicial s„o inicial em linha opostas na matriz*/
+    /*A posi√ß√£o inicial s√£o inicial em linha opostas na matriz*/
     pI->i = 1;
 
-    /*Escolha de uma coluna aleatÛria*/
+    /*Escolha de uma coluna aleat√≥ria*/
     pI->j = rand()%columns0;
 
-    /*Escolha de um labirinto aleatÛrio*/
+    /*Escolha de um labirinto aleat√≥rio*/
     pI->k = rand()%3;
     pI->w = rand()%2;
 
-    /*Garante que a posiÁ„o escolhida n„o seja uma parede*/
+    /*Garante que a posi√ß√£o escolhida n√£o seja uma parede*/
     while(labirintos[pI->k][pI->w][pI->i][pI->j] == '1')
         pI->j = (pI->j + 1)%columns0;
 
-    /*Escolha da posiÁ„o Final, utilizando o mesmo processo de escolha da posiÁ„o inicial, sÛ que colacando na linha mais distante do labirinto*/
+    /*Escolha da posi√ß√£o Final, utilizando o mesmo processo de escolha da posi√ß√£o inicial, s√≥ que colacando na linha mais distante do labirinto*/
     pF->i = rows0 - 2;
     pF->j = rand()%columns0;
     pF->k = rand()%3;
@@ -122,7 +126,7 @@ void initBeginEnd3D(struct position3d *pI, struct position3d *pF){
 
 /*Garante que todos os labirinto tenham passagens entre eles*/
 void prepareMazes(){
-    /*Abre buracos nas divisıes entre os labirintos*/
+    /*Abre buracos nas divis√µes entre os labirintos*/
     for(int k = 0; k < 3; k++)
         for(int w = 0; w < 2; w++){
             labirintos[k][w][1][(int)(columns0*0.5)] = '0';
@@ -133,9 +137,9 @@ void prepareMazes(){
     }
 }
 
-/*MÈtodos da pilha de posiÁıes*/
+/*M√©todos da pilha de posi√ß√µes*/
 
-/*Empilha uma posiÁ„o*/
+/*Empilha uma posi√ß√£o*/
 void push(struct position3d item, struct node3d** top){
     struct node3d *nptr = (struct node3d*)malloc(sizeof(struct node3d));
     nptr->data = item;
@@ -154,7 +158,7 @@ void printStack(struct node3d *top){
     }
 }
 
-/*Desempilha uma posiÁ„o*/
+/*Desempilha uma posi√ß√£o*/
 struct position3d pop(struct node3d** top){
     if (*top == NULL)
     {
@@ -173,7 +177,7 @@ struct position3d pop(struct node3d** top){
     }
 }
 
-/*Inicializa a matriz utilizada na poda da ·rvore de busca. Garante que um caminho que j· foi percorrido antes n„o seja percorrido novamente*/
+/*Inicializa a matriz utilizada na poda da √°rvore de busca. Garante que um caminho que j√° foi percorrido antes n√£o seja percorrido novamente*/
 bool** initIsLooping(int h, int b){
     bool** maze = (bool**)malloc(h * sizeof(bool*));
     for(int i = 0; i < h; i++){
@@ -185,14 +189,14 @@ bool** initIsLooping(int h, int b){
 
 }
 
-/*Retorna a posiÁ„o no vetor line de um elemento i*/
+/*Retorna a posi√ß√£o no vetor line de um elemento i*/
 int getIndex(int line[],int i, int lenght){
     for(int k = 0; k < lenght; k++)
         if(line[k] == i)
             return k;
 }
 
-/*Coloca o elemento i na ultima posiÁ„o do vetor line*/
+/*Coloca o elemento i na ultima posi√ß√£o do vetor line*/
 void last_on_the_line(int line[],int i,int length){
     i = getIndex(line,i,length);
     for(int k = i; k < length - 1; k++){
@@ -202,9 +206,9 @@ void last_on_the_line(int line[],int i,int length){
     }
 }
 
-/*Realiza a divis„o de uma camara definida por dois pontos  na diagonal da camara*/
+/*Realiza a divis√£o de uma camara definida por dois pontos  na diagonal da camara*/
 void gen(char **maze, int i0, int j0, int i1, int j1){
-    /*PosiÁ„o das linhas em relaÁ„o a i e j*/
+    /*Posi√ß√£o das linhas em rela√ß√£o a i e j*/
     int horizontal_line = -1, vertical_line = -1;
 
     /*Segmentos de linha sem buraco*/
@@ -225,7 +229,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
         j1 = aux;
     }
 
-    /*Finaliza as dvisıes por falta de espaÁo*/
+    /*Finaliza as dvis√µes por falta de espa√ßo*/
     if(i1 - i0 < 1 || j1 - j0 < 1)
         return;
 
@@ -233,7 +237,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
     if(i1-i0 > 1){
         horizontal_line = i0 + 1 + rand()%(i1 - i0 - 1);
 
-        /*Tenta criar uma linha horizontal que n„o comeÁa em um buraco*/
+        /*Tenta criar uma linha horizontal que n√£o come√ßa em um buraco*/
         for(int i = 0; (i < i1 - i0 - 1) && (maze[horizontal_line][j0 - 1] == '0' || maze[horizontal_line][j1 + 1] == '0'); i++)
             horizontal_line = i0 + 1 + rand()%(i1 - i0 - 1);
 
@@ -241,7 +245,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
         for(int j = j0; j <= j1; j++)
             maze[horizontal_line][j] = '1';
 
-        /*Caso ela comeÁe ou termine em um buraco È feito um buraco adjacente a esse buaco*/
+        /*Caso ela come√ße ou termine em um buraco √© feito um buraco adjacente a esse buaco*/
         if(maze[horizontal_line][j0 - 1] == '0'){
             maze[horizontal_line][j0] = '0';
             last_on_the_line(non_break_points,2,4);
@@ -253,7 +257,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
             break_points++;
         }
     }
-    /*Faz com que seja possivel criar apenas mais um buraco j· que deve ter apenas um segmento no m·ximo nesse desvio*/
+    /*Faz com que seja possivel criar apenas mais um buraco j√° que deve ter apenas um segmento no m√°ximo nesse desvio*/
     else{
         last_on_the_line(non_break_points,2,4);
         last_on_the_line(non_break_points,0,4);
@@ -264,7 +268,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
     if(j1-j0 > 1){
         vertical_line = j0 + 1 + rand()%(j1 - j0 - 1);
 
-        /*Tenta criar uma linha vertical que n„o comeÁa em um buraco*/
+        /*Tenta criar uma linha vertical que n√£o come√ßa em um buraco*/
         for(int j = 0; (j < j1 - j0 - 1) && (maze[i0 - 1][vertical_line] == '0' || maze[i1 + 1][vertical_line] == '0'); j++)
             vertical_line = j0 + 1 + rand()%(j1 - j0 - 1);
 
@@ -272,7 +276,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
         for(int i = i0; i <= i1; i++)
             maze[i][vertical_line] = '1';
 
-        /*Caso ela comeÁe ou termine em um buraco È feito um buraco adjacente a esse buaco*/
+        /*Caso ela come√ße ou termine em um buraco √© feito um buraco adjacente a esse buaco*/
         if(maze[i0 - 1][vertical_line] == '0'){
             maze[i0][vertical_line] = '0';
             last_on_the_line(non_break_points,1,4);
@@ -286,22 +290,22 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
         }
 
     }
-    /*Faz com que seja possivel criar apenas mais um buraco j· que deve ter apenas um segmento no m·ximo nesse desvio*/
+    /*Faz com que seja possivel criar apenas mais um buraco j√° que deve ter apenas um segmento no m√°ximo nesse desvio*/
     else{
         last_on_the_line(non_break_points,3,4);
         last_on_the_line(non_break_points,1,4);
         break_points += 2;
     }
 
-    /*Cria buracos aleatÛrio de acordo com a quantidade de buracos que ainda podem ser criados*/
+    /*Cria buracos aleat√≥rio de acordo com a quantidade de buracos que ainda podem ser criados*/
     while(break_points < 3 && (horizontal_line > -1 || vertical_line > -1)){
-        /*Escolhe um segmento aleatÛrio sem buraco*/
+        /*Escolhe um segmento aleat√≥rio sem buraco*/
         int break_point = rand()%(4 - break_points);
 
-        /*posiÁ„o do buraco na linha ou coluna*/
+        /*posi√ß√£o do buraco na linha ou coluna*/
         int point;
 
-        /*Cria um buraco de acordo com a posiÁ„o do segmento: do centro atÈ a parede horizontal direita, do centro atÈ a parede vertical superior...*/
+        /*Cria um buraco de acordo com a posi√ß√£o do segmento: do centro at√© a parede horizontal direita, do centro at√© a parede vertical superior...*/
         switch (non_break_points[break_point]) {
             case 0:
                 point = j1 - rand() % (vertical_line == -1 ? j1 - j0 : j1 - vertical_line);
@@ -343,7 +347,7 @@ void gen(char **maze, int i0, int j0, int i1, int j1){
     }
 }
 
-/*Cria um labirinto na memÛria de dimensıes h por b*/
+/*Cria um labirinto na mem√≥ria de dimens√µes h por b*/
 char** mazeGen(int h, int b){
     char** maze = (char**)malloc(h * sizeof(char*));
     for(int i = 0; i < h; i++){
@@ -363,14 +367,16 @@ char** mazeGen(int h, int b){
     return maze;
 }
 
-/*Atuliza o caminho pelo qual a camera est· se movimentando em relaÁ„o ao vetor de posiÁıes*/
+/*Atuliza o caminho pelo qual a camera est√° se movimentando em rela√ß√£o ao vetor de posi√ß√µes*/
 void updateGoing(){
 
     /*Termina o movimento*/
-    if(index_path >= path_size - 1)
+    if(index_path >= path_size - 1){
+        end_run = TRUE;
         return;
+    }
 
-    /*Move o now e o going em um item do vetor que possui o caminho atÈ o final do labirinto*/
+    /*Move o now e o going em um item do vetor que possui o caminho at√© o final do labirinto*/
     now.i = path_position3d[index_path].i;
     now.j = path_position3d[index_path].j;
     now.k = path_position3d[index_path].k;
@@ -387,36 +393,39 @@ void updateGoing(){
 
 /*Atualiza o movimento da camera*/
 void update(float delta){
-    /*Faz o movimento apenas em duas direÁıes ortogonais*/
+    /*Faz o movimento apenas em duas dire√ß√µes ortogonais*/
+
+    if(end_run)
+        return;
 
     /*Movimento nas linhas do labirinto*/
     if(now.i != going.i){
-        /*Verifica a camera est· indo para tr·s ou para frente*/
+        /*Verifica a camera est√° indo para tr√°s ou para frente*/
         if(now.i < going.i){
             now.i += delta*speed;
-            /*Verifica se a camera j· chegou no destino atual*/
+            /*Verifica se a camera j√° chegou no destino atual*/
             if (now.i >= going.i)
                 updateGoing();
         }
         else{
             now.i -= delta*speed;
-            /*Verifica se a camera j· chegou no destino atual*/
+            /*Verifica se a camera j√° chegou no destino atual*/
             if(now.i <= going.i)
                 updateGoing();
         }
     }
     /*Movimento nas colunas*/
     else if(now.j != going.j){
-        /*Verifica a camera est· indo para tr·s ou para frente*/
+        /*Verifica a camera est√° indo para tr√°s ou para frente*/
         if(now.j < going.j){
             now.j += delta*speed;
-            /*Verifica se a camera j· chegou no destino atual*/
+            /*Verifica se a camera j√° chegou no destino atual*/
             if (now.j >= going.j)
                 updateGoing();
         }
         else{
             now.j -= delta*speed;
-            /*Verifica se a camera j· chegou no destino atual*/
+            /*Verifica se a camera j√° chegou no destino atual*/
             if(now.j <= going.j)
                 updateGoing();
         }
@@ -433,9 +442,9 @@ void idle(){
     glutPostRedisplay();
 }
 
-/*Cria o ch„o do labirinto*/
+/*Cria o ch√£o do labirinto*/
 void bottom(int i0, int j0, int i1, int j1){
-    double zPosition = -0.001d;
+    double zPosition = 0.01d;
     glBegin(GL_QUADS);
     if(now.k == 1)
         glColor3f(0.4f, 0.2f, 0.2f);
@@ -511,7 +520,7 @@ void wall(float x1, float y1, float x2, float y2, bool inverted){
    glEnd();
 }
 
-/*Desenha o labirinto realizando uma divis„o em quatro dele e um afastamento das quatro partes*/
+/*Desenha o labirinto realizando uma divis√£o em quatro dele e um afastamento das quatro partes*/
 static void drawMaze(bool inverted, int rows, int columns, char **maze){
     /*Desenha as paredes do labirinto*/
     for(int i = 0; i < rows*0.5; i++)
@@ -526,12 +535,12 @@ static void drawMaze(bool inverted, int rows, int columns, char **maze){
                 }
             }
         }
-    /*Desenha o ch„o*/
+    /*Desenha o ch√£o*/
     bottom(0,0,rows*0.5 - 1, columns*0.5 - 1);
     glPushMatrix();
 
     /*Realiza o afastamento dessa parte do labirinto*/
-    glTranslated(height+d+spacing,0,0);
+    glTranslated(maze_spacing,0,0);
 
     /*Desenha as paredes do labirinto*/
     for(int i = 0; i < rows*0.5; i++)
@@ -546,13 +555,13 @@ static void drawMaze(bool inverted, int rows, int columns, char **maze){
                 }
             }
         }
-    /*Desenha o ch„o*/
+    /*Desenha o ch√£o*/
     bottom(0,columns*0.5,rows*0.5 - 1, columns - 1);
     glPopMatrix();
     glPushMatrix();
 
     /*Realiza o afastamento dessa parte do labirinto*/
-    glTranslated(0,-(height+d+spacing),0);
+    glTranslated(0,-(maze_spacing),0);
 
     /*Desenha as paredes do labirinto*/
     for(int i = rows*0.5 ; i < rows; i++)
@@ -567,13 +576,13 @@ static void drawMaze(bool inverted, int rows, int columns, char **maze){
                 }
             }
         }
-    /*Desenha o ch„o*/
+    /*Desenha o ch√£o*/
     bottom(rows*0.5,0,rows - 1, columns*0.5 - 1);
     glPopMatrix();
     glPushMatrix();
 
     /*Realiza o afastamento dessa parte do labirinto*/
-    glTranslated(height+d+spacing,-(height+d+spacing),0);
+    glTranslated(maze_spacing,-(maze_spacing),0);
 
     /*Desenha as paredes do labirinto*/
     for(int i = rows*0.5 ; i < rows; i++)
@@ -588,7 +597,7 @@ static void drawMaze(bool inverted, int rows, int columns, char **maze){
                 }
             }
         }
-    /*Desenha o ch„o*/
+    /*Desenha o ch√£o*/
     bottom(rows*0.5,columns*0.5,rows - 1, columns - 1);
     glPopMatrix();
 
@@ -598,36 +607,36 @@ static void drawMaze(bool inverted, int rows, int columns, char **maze){
 /*Desenha o caminho do labirinto*/
 void draw_path3D(){
         for (int i = 0; i < path_size - 1; i++){
-            /*Pega 2 pontos de cada vez do vetor de posiÁıes e cria uma reta entre eles*/
+            /*Pega 2 pontos de cada vez do vetor de posi√ß√µes e cria uma reta entre eles*/
             struct position3d p0 = path_position3d[i];
             struct position3d p1 = path_position3d[i+1];
 
-            /*Altura em que a linha ser· desenhada*/
+            /*Altura em que a linha ser√° desenhada*/
             float heightP = height;
-            /*Inverte o tamanho caso o labirinto esteja de ponta cabeÁa*/
+            /*Inverte o tamanho caso o labirinto esteja de ponta cabe√ßa*/
             if(p0.w != now.w)
                 heightP = -height;
 
             glPushMatrix();
 
-            /*Afasta a linha de acordo com a posiÁ„o no labirinto e desenha a linha de acordo com o labirinto na frente da camera*/
+            /*Afasta a linha de acordo com a posi√ß√£o no labirinto e desenha a linha de acordo com o labirinto na frente da camera*/
             if(p0.k == (now.k + 1)%3 ){
                 glRotated(90,1,0,0);
-                glTranslated(0,(d+height+spacing)*0.5 + (float)rows0*0.5*spacing,(d+height+spacing)*0.5 + (float)columns0*0.5*spacing);
+                glTranslated(0,(maze_spacing)*0.5 + (float)rows0*0.5*spacing,(maze_spacing)*0.5 + (float)columns0*0.5*spacing);
             }
             else if (p0.k == (now.k + 2)%3){
                 glRotated(90,0,1,0);
-                glTranslated(-((d+height+spacing)*0.5 + (float)rows0*0.5*spacing ),0,((d+height+spacing)*0.5 + (float)columns0*0.5*spacing));
+                glTranslated(-((maze_spacing)*0.5 + (float)rows0*0.5*spacing ),0,((maze_spacing)*0.5 + (float)columns0*0.5*spacing));
             }
 
             if(p0.i < rows0*0.5){
                 if(p0.j >= (int)(columns0*0.5))
-                    glTranslated(height+d+spacing,0,0);
+                    glTranslated(maze_spacing,0,0);
             }else{
                 if(p0.j < rows0*0.5)
-                    glTranslated(0,-(height+d+spacing),0);
+                    glTranslated(0,-(maze_spacing),0);
                 else
-                    glTranslated(height+d+spacing,-(height+d+spacing),0);
+                    glTranslated(maze_spacing,-(maze_spacing),0);
             }
 
             /*Desemha o caminho*/
@@ -641,27 +650,27 @@ void draw_path3D(){
 
 
 
-/*Realiza a busca em profundidade com poda no labirinto dado uma posiÁ„o inicial e uma final*/
+/*Realiza a busca em profundidade com poda no labirinto dado uma posi√ß√£o inicial e uma final*/
 bool AIPath3D(struct position3d pI, struct position3d pF, struct node3d** path){
     int i = pI.i, j = pI.j, k = pI.k, w = pI.w;
 
-    /*Proxima posiÁ„o*/
+    /*Proxima posi√ß√£o*/
     struct position3d next = {i,j,k,w};
 
-    /*Realiza a poda nos ciclos da ·rvore*/
+    /*Realiza a poda nos ciclos da √°rvore*/
     if(isLooping[k][w][i][j])
         return FALSE;
     else
         isLooping[k][w][i][j] = TRUE;
 
-    /*Caso atinja a posiÁ„o final, a posiÁ„o È empilhada e È retornado true para empilhar a posiÁ„o do nÛ pai em cascata atÈ que atinja o fim*/
+    /*Caso atinja a posi√ß√£o final, a posi√ß√£o √© empilhada e √© retornado true para empilhar a posi√ß√£o do n√≥ pai em cascata at√© que atinja o fim*/
     if(pI.i == pF.i && pI.j == pF.j && pI.k == pF.k && pI.w == pF.w){
         push(pF, path);
         path_size++;
         return TRUE;
     }
 
-    /*Possiveis nÛs da arvore de busca*/
+    /*Possiveis n√≥s da arvore de busca*/
     next.i = i - 1;
     next.j = j;
     if(labirintos[k][w][i - 1][j] == '0' && AIPath3D(next,pF,path)){
@@ -694,7 +703,7 @@ bool AIPath3D(struct position3d pI, struct position3d pF, struct node3d** path){
         return TRUE;
     }
 
-    /*NÛs que representam a passagem de um labirinto para outro*/
+    /*N√≥s que representam a passagem de um labirinto para outro*/
     if(i == (int)(rows0*0.5 - 1)){
         next.i = i+1;
         next.j = j;
@@ -740,7 +749,7 @@ bool AIPath3D(struct position3d pI, struct position3d pF, struct node3d** path){
         }
     }
 
-    /*Informa que n„o existe um caminho entre as posiÁıes passadas*/
+    /*Informa que n√£o existe um caminho entre as posi√ß√µes passadas*/
     return FALSE;
 };
 
@@ -762,12 +771,12 @@ void display() {
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
-    /*Configura a camera de acordo com a posiÁ„o do caminho sendo percorrido*/
+    /*Configura a camera de acordo com a posi√ß√£o do caminho sendo percorrido*/
     double eX = 0, eY = 0, eZ = 0, cX = 0, cY = 0, cZ = 0;
     if(view == 0 || view == 1){
         if(view == 1){
-            eX = columns0*spacing*0.5 - (-now.j + columns0 - 1)*spacing + 5.7;
-            eY = -rows0*spacing*0.5 + (-now.i + rows0 - 1)*spacing -4.5;
+            eX = columns0*spacing*0.5 - (-now.j + columns0 - 1)*spacing + maze_spacing - 1;
+            eY = -rows0*spacing*0.5 + (-now.i + rows0 - 1)*spacing - maze_spacing + 1 + 1.5;
             eZ = z -24;
             cX = eX;
             cY = eY;
@@ -775,19 +784,19 @@ void display() {
             glRotated(90*view,1,0,0);
         }
         else if (view == 0){
-            eX = columns0*spacing*0.5 - (-now.j + columns0 - 1)*spacing + 5.7;
-            eY = -rows0*spacing*0.5 + (-now.i + rows0 - 1)*spacing -4.5;
+            eX = columns0*spacing*0.5 - (-now.j + columns0 - 1)*spacing + maze_spacing - 1;
+            eY = -rows0*spacing*0.5 + (-now.i + rows0 - 1)*spacing - maze_spacing + 1;
             eZ = z -20;
             cX = eX;
             cY = eY;
             cZ = z+lz -20;
         }
-        /*Realiza o espaÁamento entre partes do labirinto*/
+        /*Realiza o espa√ßamento entre partes do labirinto*/
         if(now.j < columns0*0.5){
-            glTranslated(height+d+spacing,0,0);
+            glTranslated(maze_spacing,0,0);
         }
         if(now.i < rows0*0.5)
-            glTranslated(0,-(height+d+spacing),0);
+            glTranslated(0,-(maze_spacing),0);
 
         /*Configura a camera*/
         gluLookAt(eX, eY, eZ,
@@ -809,16 +818,16 @@ void display() {
    glColor3d(1,1,1);
    draw_path3D();
 
-   /*Desenha o labirinto que a camera est· atualmente*/
+   /*Desenha o labirinto que a camera est√° atualmente*/
    drawMaze(FALSE,rows0,columns0,labirintos[now.k][now.w]);
    drawMaze(TRUE,rows0,columns0,labirintos[now.k][(now.w + 1)%2]);
 
 
-   /*Desenha os labirintos adajcentes fazendo as suas respectivas rotaÁıes e posiionamento no centro*/
+   /*Desenha os labirintos adajcentes fazendo as suas respectivas rota√ß√µes e posiionamento no centro*/
    glPushMatrix();
 
    glRotated(90,1,0,0);
-   glTranslated(0,(d+height+spacing)*0.5 + (float)rows0*0.5*spacing,(d+height+spacing)*0.5 + (float)columns0*0.5*spacing);
+   glTranslated(0,(maze_spacing)*0.5 + (float)rows0*0.5*spacing,(maze_spacing)*0.5 + (float)columns0*0.5*spacing);
 
    drawMaze(FALSE,rows0,columns0,labirintos[(now.k + 1)%3][now.w]);
    drawMaze(TRUE,rows0,columns0,labirintos[(now.k + 1)%3][(now.w + 1)%2]);
@@ -826,7 +835,7 @@ void display() {
    glPopMatrix();
 
    glRotated(90,0,1,0);
-   glTranslated(-((d+height+spacing)*0.5 + (float)rows0*0.5*spacing ),0,((d+height+spacing)*0.5 + (float)columns0*0.5*spacing));
+   glTranslated(-((maze_spacing)*0.5 + (float)rows0*0.5*spacing ),0,((maze_spacing)*0.5 + (float)columns0*0.5*spacing));
 
    drawMaze(FALSE,rows0,columns0,labirintos[(now.k + 2)%3][now.w]);
    drawMaze(TRUE,rows0,columns0,labirintos[(now.k + 2)%3][(now.w + 1)%2]);
@@ -922,6 +931,14 @@ static void load(){
             int i = 0;
             int j = 0;
             while(i*j < rows0*columns0){
+                    char aux;
+                    fread(&aux,sizeof(char),1,f);
+                    if(aux == '0' || aux == '1'){
+                        labirintos[k][w][i][j] = aux;
+                        j++;
+                        i = j == columns0 ? i + 1: i;
+                        j = 0;
+                    }
 
             }
         }
@@ -955,7 +972,7 @@ void createGLUTMenus() {
 	menu = glutCreateMenu(processMenuEvents);
 
 	//add entries to our menu
-	glutAddMenuEntry("Vista panor‚mica", 0);
+	glutAddMenuEntry("Vista panor√¢mica", 0);
 	glutAddMenuEntry("Vista inclinada", 1);
 	glutAddMenuEntry("Vista Labirinto inteiro", 2);
 	glutAddMenuEntry("Save", 3);
@@ -968,33 +985,21 @@ void createGLUTMenus() {
 
 int main(int argc, char** argv) {
 
-    /*PosiÁ„o inicial*/
+    /*Posi√ß√£o inicial*/
     struct position3d pI3, pF3;
 
     /*Pilha*/
     struct node3d* path3 = NULL;
 
 
-    /*Inicializa as dimensıes dos labirintos*/
+    /*Inicializa as dimens√µes dos labirintos*/
     printf("Insira o lado L do labirinto(de preferencia maior ou igual a 20): ");
     scanf("%d",&rows0);
     columns0 = rows0 ;
 
-    /*Garante que os labirintos sejam diferentes em cada execuÁ„o*/
+    /*Garante que os labirintos sejam diferentes em cada execu√ß√£o*/
     srand(time(NULL));
 
-    /*Gera os 6 labirintofor(int k = 0; k < 3; k++)
-        for(int w = 0; w < 2; w++){
-            char number[7] = {k + '0', w + '0', '.', 't', 'x', 't', '\0'};
-            char file_name[30] = "labirinto";
-            strcat(file_name,number);
-
-
-            FILE *f = fopen(file_name, "w");
-            if (f == NULL){
-                printf("Error opening file!\n");
-                exit(1);
-            }s*/
     for(int i = 0; i < 3; i ++){
         labirintos[i][0] = mazeGen(rows0,columns0);
         labirintos[i][1] = mazeGen(rows0,columns0);
@@ -1007,13 +1012,13 @@ int main(int argc, char** argv) {
         isLooping[i][1] = initIsLooping(rows0,columns0);
     }
 
-    /*Inicializa a PosiÁ„o inicial e final*/
+    /*Inicializa a Posi√ß√£o inicial e final*/
     initBeginEnd3D(&pI3,&pF3);
 
     /*Realiza a busca em profundidade*/
     AIPath3D(pI3,pF3,&path3);
 
-    /*Cria o vetor com o caminho atÈ o final*/
+    /*Cria o vetor com o caminho at√© o final*/
     path_position3d = (struct position3d*) malloc(path_size*sizeof(struct position3d));
     for(int i = 0; i < path_size; i++){
         path_position3d[i] = pop(&path3);
@@ -1056,8 +1061,3 @@ int main(int argc, char** argv) {
    glutMainLoop();                 // Enter the infinite event-processing loop
    return 0;
 }
-
-
-
-
-
