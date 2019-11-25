@@ -88,15 +88,34 @@ double maze_spacing = 2*height+d+spacing;
 
 bool end_run = FALSE;
 
-const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
-const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
+GLfloat luzAmbiente[4]={0.2,0.2,0.2,1.0};
+GLfloat luzDifusa[4]={0.7,0.7,0.7,1.0};	   // "cor"
+GLfloat luzEspecular[4]={1.0, 1.0, 1.0, 1.0};// "brilho"
+GLfloat posicaoLuz[4]={0.0, 50.0, 50.0, 1.0};
 
-const GLfloat mat_ambient[]    = { 0.7f, 0.7f, 0.7f, 1.0f };
-const GLfloat mat_diffuse[]    = { 0.8f, 0.8f, 0.8f, 1.0f };
-const GLfloat mat_specular[]   = { 1.0f, 1.0f, 1.0f, 1.0f };
-const GLfloat high_shininess[] = { 100.0f };
+GLfloat especularidade[4]={1.0,1.0,1.0,1.0};
+GLint especMaterial = 60;
+
+	/*Textura*/
+static GLfloat pixels[] ={
+    0, 1, 1,
+    1, 0, 1,
+    1, 1, 0,
+    1, 1, 1
+};
+
+GLuint texid[] = { -1 };
+
+static inline void initTexture()
+{
+    glEnable( GL_TEXTURE_2D );
+    glGenTextures( 1, texid );
+    glBindTexture( GL_TEXTURE_2D, texid[ 0 ] );
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, pixels );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+}
+
 
 /*Inicializa a posição inicial e final do labirinto garantindo que as posições não sejam paredes*/
 void initBeginEnd3D(struct position3d *pI, struct position3d *pF){
@@ -930,16 +949,17 @@ static void load(){
             }
             int i = 0;
             int j = 0;
-            while(i*j < rows0*columns0){
+            while(i < rows0){
+                    while(j < rows0){
                     char aux;
                     fread(&aux,sizeof(char),1,f);
                     if(aux == '0' || aux == '1'){
                         labirintos[k][w][i][j] = aux;
                         j++;
-                        i = j == columns0 ? i + 1: i;
-                        j = 0;
                     }
 
+                }
+                i++;
             }
         }
 
@@ -982,11 +1002,8 @@ void createGLUTMenus() {
 	glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
 
-
-int main(int argc, char** argv) {
-
-    /*Posição inicial*/
-    struct position3d pI3, pF3;
+void initVar(){
+     struct position3d pI3, pF3;
 
     /*Pilha*/
     struct node3d* path3 = NULL;
@@ -1004,7 +1021,6 @@ int main(int argc, char** argv) {
         labirintos[i][0] = mazeGen(rows0,columns0);
         labirintos[i][1] = mazeGen(rows0,columns0);
     }
-    save();
 
     /*Inicializa as matrizes de poda*/
     for(int i = 0; i<3; i++){
@@ -1023,16 +1039,26 @@ int main(int argc, char** argv) {
     for(int i = 0; i < path_size; i++){
         path_position3d[i] = pop(&path3);
     }
+}
+
+
+int main(int argc, char** argv) {
+
+    initVar();
+    load();
+
+    printf("sdfsdfsd");
 
 
     glutInit(&argc, argv);            // Initialize GLUT
-    glutInitDisplayMode(GLUT_DOUBLE); // Enable double buffered mode
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH ); // Enable double buffered mode
     glutInitWindowSize(600, 600);   // Set the window's initial width & height
     glutInitWindowPosition(100, 100); // Position the window's initial top-left corner
     glutCreateWindow("Labirinto");          // Create window with the given title
     glutDisplayFunc(display);       // Register callback handler for window re-paint event
     glutReshapeFunc(reshape);       // Register callback handler for window re-size event
     initGL();
+    initTexture();
     createGLUTMenus();
     glutIdleFunc(idle);
 
@@ -1040,23 +1066,35 @@ int main(int argc, char** argv) {
 
     glClearColor(1,1,1,1);
 
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
 
-    glEnable(GL_LIGHT0);
-    glEnable(GL_NORMALIZE);
-    glEnable(GL_COLOR_MATERIAL);
-    glEnable(GL_LIGHTING);
+	// Habilita o modelo de colorização de Gouraud
+	glShadeModel(GL_SMOOTH);
 
-    glLightfv(GL_LIGHT0, GL_AMBIENT,  light_ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE,  light_diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+	// Define a refletância do material
+	glMaterialfv(GL_FRONT,GL_SPECULAR, especularidade);
+	// Define a concentração do brilho
+	glMateriali(GL_FRONT,GL_SHININESS,especMaterial);
 
-    glMaterialfv(GL_FRONT, GL_AMBIENT,   mat_ambient);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE,   mat_diffuse);
-    glMaterialfv(GL_FRONT, GL_SPECULAR,  mat_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, high_shininess);
+	// Ativa o uso da luz ambiente
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, luzAmbiente);
+
+	// Define os parâmetros da luz de número 0
+	glLightfv(GL_LIGHT0, GL_AMBIENT, luzAmbiente);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, luzDifusa );
+	glLightfv(GL_LIGHT0, GL_SPECULAR, luzEspecular );
+	glLightfv(GL_LIGHT0, GL_POSITION, posicaoLuz );
+
+	// Habilita a definição da cor do material a partir da cor corrente
+	glEnable(GL_COLOR_MATERIAL);
+	//Habilita o uso de iluminação
+	glEnable(GL_LIGHTING);
+	// Habilita a luz de número 0
+	glEnable(GL_LIGHT0);
+	// Habilita o depth-buffering
+	glEnable(GL_DEPTH_TEST);
+
+
+
                          // Our own OpenGL initialization
    glutMainLoop();                 // Enter the infinite event-processing loop
    return 0;
